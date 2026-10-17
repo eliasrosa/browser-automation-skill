@@ -2,7 +2,7 @@
 name: browser-automation
 description: Use when automating web apps the user is already logged into (Teams, Outlook, Jira web, internal tools) via the user's own Chrome over CDP — read/send messages, scrape data, fill forms, record video — and MCP tools or APIs are unavailable or insufficient.
 inclusion: auto
-version: 2026-10-17T13:24
+version: 2026-10-17T13:37
 ---
 
 # Browser Automation
@@ -45,7 +45,8 @@ MCP/API dedicada e suficiente para a tarefa.
 3. Instalar a extensão do Playwright:
    https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm
 
-É só isso. O agente cuida de todo o resto.
+É só isso. O agente cuida de todo o resto. Procedimento completo de conexão, regras de
+navegação e diagnóstico em [`runbooks/browser-cdp-agente.md`](runbooks/browser-cdp-agente.md).
 
 ## Como funciona
 
@@ -187,11 +188,14 @@ ambiente específico ficam nos seus próprios steerings/notas, nunca nesta skill
 - Se o Chrome reiniciar, o UUID muda e o agente reconecta.
 - Popups de extensão (como o Jam) ficam fora do CDP — não dá para automatizar.
 
-## Ferramentas
+## Ferramentas e runbooks
 
-| Script | Finalidade |
+| Arquivo | Finalidade |
 |---|---|
 | `tools/attach.sh` | Conectar ao Chrome do usuário e devolver os dados da sessão |
+| `runbooks/browser-cdp-agente.md` | Setup do Chrome, conexão CDP, regras de navegação e diagnóstico |
+| `runbooks/browser-gravacao-video.md` | Gravar a navegação do agente em vídeo |
+| `apps/teams.md` | Guia do Microsoft Teams |
 
 ## Veja também
 

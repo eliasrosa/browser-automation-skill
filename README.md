@@ -67,9 +67,14 @@ browser-automation/
 ├── LICENSE            # MIT
 ├── apps/              # Guias por aplicação (estrutura, seletores, padrões)
 │   └── teams.md       # Microsoft Teams
+├── runbooks/          # Procedimentos de setup e operação
+│   ├── browser-cdp-agente.md     # Setup do Chrome, conexão CDP, regras, diagnóstico
+│   └── browser-gravacao-video.md # Gravação de vídeo da navegação
 └── tools/
     └── attach.sh      # Conecta ao Chrome do usuário
 ```
+
+Tudo o que o usuário precisa para instalar, configurar e usar está no próprio repositório — a skill é autocontida.
 
 ## Apps suportados
 
