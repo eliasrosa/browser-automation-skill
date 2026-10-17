@@ -65,16 +65,18 @@ browser-automation/
 ├── SKILL.md           # Documentação completa da skill
 ├── README.md          # Este arquivo
 ├── LICENSE            # MIT
+├── apps/              # Guias por aplicação (estrutura, seletores, padrões)
+│   └── teams.md       # Microsoft Teams
 └── tools/
     └── attach.sh      # Conecta ao Chrome do usuário
 ```
 
 ## Apps suportados
 
-Padrões testados incluídos para:
+Guias detalhados em `apps/`:
 
-- **Microsoft Teams** — Chat, busca, menções, @menções
-- **Apps web genéricos** — Formulários, navegação, extração de dados
+- **Microsoft Teams** ([`apps/teams.md`](apps/teams.md)) — Chat, busca, menções, `conversationId`, leitura sem marcar como lido (IndexedDB), deep links
+- **Apps web genéricos** — Formulários, navegação, extração de dados (padrões na SKILL.md)
 
 Mapeamentos específicos de app (IDs, seletores de ferramentas internas) devem ir nos seus próprios steerings, não nesta skill.
 

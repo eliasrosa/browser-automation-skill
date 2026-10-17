@@ -2,7 +2,7 @@
 name: browser-automation
 description: Use when automating web apps the user is already logged into (Teams, Outlook, Jira web, internal tools) via the user's own Chrome over CDP — read/send messages, scrape data, fill forms, record video — and MCP tools or APIs are unavailable or insufficient.
 inclusion: auto
-version: 2026-10-17T13:20
+version: 2026-10-17T13:24
 ---
 
 # Browser Automation
@@ -172,46 +172,16 @@ playwright-cli -s=<sessao> video-stop
 
 ## Padrões específicos por app
 
-### Microsoft Teams
+Guias detalhados por aplicação ficam em `apps/`. Cada guia traz estrutura da UI,
+seletores, formatos de ID e padrões de extração — só técnica, sem dados de contas/pessoas.
 
-```javascript
-// Ler o conteúdo do chat (o que está carregado no DOM)
-document.querySelector('[data-tid="app-layout-area--main"]').innerText
+| App | Guia | Cobre |
+|---|---|---|
+| Microsoft Teams | [`apps/teams.md`](apps/teams.md) | Ler/enviar mensagens, @menções, busca, lista de chats, `conversationId`, leitura sem marcar como lido (IndexedDB), deep links, gotchas de virtualização |
 
-// Itens da lista de chats (IDs estáveis)
-document.querySelectorAll('span[id^="title-chat-list-item_"]')
-
-// Editor de mensagem
-textbox: '[data-tid="app-layout-area--main"] [role="textbox"]'
-botão enviar: 'button[aria-label*="Send"]'
-
-// Buscar no chat
-Ctrl+F → digitar no searchbox → Enter
-
-// @menção
-Digitar '@Nome' → esperar o listbox de Suggestions → clicar na opção
-```
-
-**Pegadinhas:**
-- `mouse.wheel` não rola o chat: o scroll fica numa div interna, não no body.
-- O Teams virtualiza as mensagens: rolar descarrega as antigas do DOM. O `innerText` pega só
-  o buffer carregado. Para histórico longo, usar a busca (Find/global).
-- Pode ser preciso expandir pastas para ver todos os itens de chat.
-
-### Ler sem marcar como lido
-
-Usar o cache local do IndexedDB em vez de abrir os chats:
-
-```javascript
-// O Teams guarda mensagens no IndexedDB: Teams:replychain-manager:…
-// Store: replychains, key: [conversationId, replyChainId]
-// Cada registro tem um messageMap com as mensagens
-```
-
-Isso lê as mensagens em cache sem marcá-las como lidas. A cobertura depende do que o usuário
-já abriu naquele navegador.
-
-## Limitações
+**Ler primeiro o guia do app antes de automatizá-lo** — ele mapeia os seletores e as
+pegadinhas que não dá para adivinhar. Mapeamentos de IDs reais (contatos, canais) de um
+ambiente específico ficam nos seus próprios steerings/notas, nunca nesta skill.
 
 - O shell do agente não tem `$DISPLAY`. A conexão CDP funciona via loopback.
 - Se o Chrome reiniciar, o UUID muda e o agente reconecta.
