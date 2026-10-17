@@ -1,120 +1,120 @@
 # Browser Automation
 
-Kiro Crew skill for automating web applications via the user's logged-in Chrome browser using CDP (Chrome DevTools Protocol).
+Skill do Kiro Crew para automatizar aplicações web pelo Chrome logado do usuário usando CDP (Chrome DevTools Protocol).
 
-## What it does
+## O que faz
 
-- **Drive logged-in sessions** — Automate Teams, Outlook, Jira, internal tools using the user's existing logins
-- **No credentials needed** — Uses the browser's session cookies, not API keys
-- **Safe by design** — Opens new tabs, never navigates user's existing ones
-- **Video recording** — Capture interactions for demos or debugging
+- **Dirige sessões logadas** — Automatiza Teams, Outlook, Jira, ferramentas internas usando os logins que o usuário já tem
+- **Sem credenciais** — Usa os cookies de sessão do navegador, não chaves de API
+- **Seguro por design** — Abre abas novas, nunca navega nas abas existentes do usuário
+- **Gravação de vídeo** — Captura interações para demos ou depuração
 
-## Installation
+## Instalação
 
-### As a Kiro Crew skill
+### Como skill do Kiro Crew
 
 ```bash
-# Copy to skills directory
+# Copiar para o diretório de skills
 cp -r . ~/.kiro/crew/skills/browser-automation/
 
-# Or install from registry (when published)
+# Ou instalar pelo registry (quando publicada)
 # kirocrew skill install browser-automation
 ```
 
-### User setup (one time)
+### Configuração do usuário (uma vez)
 
-1. Open Chrome normally
-2. Go to `chrome://inspect/#remote-debugging` and enable
-3. Install the [Playwright extension](https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm)
+1. Abrir o Chrome normalmente
+2. Ir em `chrome://inspect/#remote-debugging` e habilitar
+3. Instalar a [extensão do Playwright](https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm)
 
-## Usage
+## Uso
 
-The agent handles connection and navigation automatically. Users just ask:
+O agente cuida da conexão e da navegação automaticamente. O usuário só pede:
 
-- "Send a message to X in Teams"
-- "Read the latest messages from channel Y"
-- "Open the admin panel and check Z"
-- "Record a video of me testing this flow"
+- "Envia uma mensagem para X no Teams"
+- "Lê as últimas mensagens do canal Y"
+- "Abre o painel admin e verifica Z"
+- "Grava um vídeo de mim testando esse fluxo"
 
-### Manual usage
+### Uso manual
 
 ```bash
-# Connect to Chrome
+# Conectar ao Chrome
 ./tools/attach.sh
 
-# Or with session name (for parallel use)
-./tools/attach.sh -s my-task
+# Ou com nome de sessão (para uso em paralelo)
+./tools/attach.sh -s minha-tarefa
 
-# Then use playwright-cli
-playwright-cli -s=my-task snapshot
-playwright-cli -s=my-task click <ref>
-playwright-cli -s=my-task fill <ref> "text"
+# Depois usar o playwright-cli
+playwright-cli -s=minha-tarefa snapshot
+playwright-cli -s=minha-tarefa click <ref>
+playwright-cli -s=minha-tarefa fill <ref> "texto"
 ```
 
-## Key rules
+## Regras principais
 
-1. **`window.open`, never `tab-new`** — New tabs via JavaScript, not CLI, to stay in the right window
-2. **Never `close`** — Use `detach` when done
-3. **Fresh snapshot before interacting** — Element refs die after navigation
-4. **Read with `evaluate`, not screenshot** — `innerText` is faster and more reliable
+1. **`window.open`, nunca `tab-new`** — Abas novas via JavaScript, não pelo CLI, para ficar na janela certa
+2. **Nunca `close`** — Usar `detach` ao terminar
+3. **Snapshot novo antes de interagir** — Os refs de elemento morrem após a navegação
+4. **Ler com `evaluate`, não screenshot** — `innerText` é mais rápido e mais confiável
 
-## Structure
+## Estrutura
 
 ```
 browser-automation/
-├── SKILL.md           # Full skill documentation
-├── README.md          # This file
+├── SKILL.md           # Documentação completa da skill
+├── README.md          # Este arquivo
 ├── LICENSE            # MIT
 └── tools/
-    └── attach.sh      # Connect to user's Chrome
+    └── attach.sh      # Conecta ao Chrome do usuário
 ```
 
-## Supported apps
+## Apps suportados
 
-Tested patterns included for:
+Padrões testados incluídos para:
 
-- **Microsoft Teams** — Chat, search, mentions, @mentions
-- **Generic web apps** — Forms, navigation, data extraction
+- **Microsoft Teams** — Chat, busca, menções, @menções
+- **Apps web genéricos** — Formulários, navegação, extração de dados
 
-App-specific mappings (IDs, selectors for internal tools) should go in your own steering files, not in this skill.
+Mapeamentos específicos de app (IDs, seletores de ferramentas internas) devem ir nos seus próprios steerings, não nesta skill.
 
-## Video recording
+## Gravação de vídeo
 
 ```bash
-# Start HD recording
-playwright-cli -s=task video-start --size 1920x1080 --cursor
+# Iniciar gravação HD
+playwright-cli -s=tarefa video-start --size 1920x1080 --cursor
 
-# Mark chapters
-playwright-cli -s=task video-chapter "Step 1: Open settings"
+# Marcar capítulos
+playwright-cli -s=tarefa video-chapter "Passo 1: abrir configurações"
 
-# Stop and save
-playwright-cli -s=task video-stop
-# → .webm in ~/.kiro/crew/playwright-snapshots/
+# Parar e salvar
+playwright-cli -s=tarefa video-stop
+# → .webm em ~/.kiro/crew/playwright-snapshots/
 
-# Convert to mp4
+# Converter para mp4
 ffmpeg -i video.webm -c:v libx264 video.mp4
 ```
 
-## Troubleshooting
+## Solução de problemas
 
-1. **Page errors**: `playwright-cli console error`
-2. **Network failures**: Set up response listener (see SKILL.md)
-3. **Element not responding**: Check visibility with `evaluate`
-4. **Trace (last resort)**: `tracing-start` → actions → `tracing-stop`
+1. **Erros da página**: `playwright-cli console error`
+2. **Falhas de rede**: montar um listener de response (ver SKILL.md)
+3. **Elemento não responde**: checar visibilidade com `evaluate`
+4. **Trace (último recurso)**: `tracing-start` → ações → `tracing-stop`
 
-⚠️ Traces contain credentials — save to scratch, delete after analysis.
+⚠️ Traces contêm credenciais — salvar em scratch, apagar depois da análise.
 
-## Limitations
+## Limitações
 
-- Agent's shell has no `$DISPLAY` — works via loopback only
-- Chrome restart changes the UUID — reconnect needed
-- Extension popups (Jam, etc.) are outside CDP
+- O shell do agente não tem `$DISPLAY` — funciona só via loopback
+- Reiniciar o Chrome muda o UUID — precisa reconectar
+- Popups de extensão (Jam, etc.) ficam fora do CDP
 
-## License
+## Licença
 
 MIT
 
-## Related
+## Relacionados
 
-- [playwright-cli](https://github.com/anthropics/anthropic-tools) — The underlying CLI
-- [Kiro Crew](https://kiro.dev) — Autonomous agent platform
+- [playwright-cli](https://github.com/anthropics/anthropic-tools) — O CLI por baixo
+- [Kiro Crew](https://kiro.dev) — Plataforma de agentes autônomos

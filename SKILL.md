@@ -1,202 +1,230 @@
+---
+name: browser-automation
+description: Use when automating web apps the user is already logged into (Teams, Outlook, Jira web, internal tools) via the user's own Chrome over CDP — read/send messages, scrape data, fill forms, record video — and MCP tools or APIs are unavailable or insufficient.
+inclusion: auto
+version: 2026-10-17T13:20
+---
+
 # Browser Automation
 
-> Drive the user's logged-in Chrome browser via CDP (Chrome DevTools Protocol) to automate
-> web applications without requiring separate logins or API credentials.
+## Visão Geral
 
-## When to use
+Dirige o Chrome logado do usuário via CDP (Chrome DevTools Protocol) com `playwright-cli`
+para automatizar aplicações web sem exigir logins separados nem credenciais de API: as
+sessões existentes do usuário (cookies de login) ficam disponíveis.
 
-- Automate web apps the user is already logged into (Teams, Outlook, Jira web, internal tools)
-- Read or send messages, scrape data, fill forms, navigate workflows
-- Record video of browser interactions for demos or debugging
-- When MCP tools or APIs are unavailable or insufficient
+## Quando Usar
 
-## Prerequisites (user setup, one time)
+- Automatizar apps web em que o usuário já está logado (Teams, Outlook, Jira web, ferramentas internas)
+- Ler ou enviar mensagens, extrair dados, preencher formulários, navegar fluxos
+- Gravar vídeo das interações no navegador para demos ou depuração
+- Quando ferramentas MCP ou APIs não estão disponíveis ou não bastam
 
-1. Open Chrome normally (no special flags)
-2. Go to `chrome://inspect/#remote-debugging` and enable
-3. Install the Playwright extension:
+**Quando NÃO usar:** leitura simples de página pública (use `web_fetch`); quando existe
+MCP/API dedicada e suficiente para a tarefa.
+
+## Referência Rápida
+
+| Operação | Comando |
+|---|---|
+| Conectar ao Chrome | `tools/attach.sh` (ou `tools/attach.sh -s <sessao>`) |
+| Listar abas | `playwright-cli -s=<sessao> tab-list` |
+| Abrir aba nova | `run-code` com `window.open('URL', '_blank')` — nunca `tab-new`/`goto` |
+| Ver estado / refs | `playwright-cli -s=<sessao> snapshot` |
+| Clicar | `playwright-cli -s=<sessao> click <ref>` |
+| Preencher | `playwright-cli -s=<sessao> fill <ref> "texto"` |
+| Ler conteúdo | `evaluate` + `innerText`/`innerHTML` (preferir a screenshot) |
+| Verificação visual | `playwright-cli -s=<sessao> screenshot` (último recurso) |
+| Erros da página | `playwright-cli -s=<sessao> console error` |
+| Encerrar | `playwright-cli -s=<sessao> detach` — **nunca** `close` |
+
+## Pré-requisitos (configuração do usuário, uma vez)
+
+1. Abrir o Chrome normalmente (sem flags especiais)
+2. Ir em `chrome://inspect/#remote-debugging` e habilitar
+3. Instalar a extensão do Playwright:
    https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm
 
-That's it. The agent handles everything else.
+É só isso. O agente cuida de todo o resto.
 
-## How it works
+## Como funciona
 
-The agent connects to the user's running Chrome via CDP, opens tabs, and interacts with
-pages using `playwright-cli`. The user's existing sessions (login cookies) are available.
+O agente conecta ao Chrome em execução do usuário via CDP, abre abas e interage com as
+páginas usando `playwright-cli`. As sessões existentes do usuário (cookies de login) ficam disponíveis.
 
 ```bash
-# Connect to user's Chrome (agent does this automatically)
+# Conectar ao Chrome do usuário (o agente faz isso automaticamente)
 P=$HOME/.config/google-chrome/DevToolsActivePort
 PORT=$(sed -n 1p "$P"); WS=$(sed -n 2p "$P")
 playwright-cli attach --cdp="ws://127.0.0.1:${PORT}${WS}"
 
-# Open a new tab (never navigate the user's existing tabs)
-playwright-cli -s=<session> run-code "async (page) => { await page.evaluate(() => window.open('https://example.com', '_blank')); }"
+# Abrir uma aba nova (nunca navegar nas abas existentes do usuário)
+playwright-cli -s=<sessao> run-code "async (page) => { await page.evaluate(() => window.open('https://example.com', '_blank')); }"
 
-# Interact
-playwright-cli -s=<session> snapshot
-playwright-cli -s=<session> click <ref>
-playwright-cli -s=<session> fill <ref> "text"
-playwright-cli -s=<session> screenshot
+# Interagir
+playwright-cli -s=<sessao> snapshot
+playwright-cli -s=<sessao> click <ref>
+playwright-cli -s=<sessao> fill <ref> "texto"
+playwright-cli -s=<sessao> screenshot
 ```
 
-## Rules
+## Regras
 
-### Navigation
+### Navegação
 
-- **`window.open`, never `tab-new` or `goto`** — `tab-new` opens in the dashboard window
-  and covers the conversation. Always: `tab-select` to a tab in the target window →
-  `run-code` with `window.open('URL', '_blank')`.
-- **Never `close`** — use `detach` when done
-- **Fresh snapshot before interacting** — refs die after navigation
-- **Two windows**: dashboard (conversation) and work (Teams, etc.). New tabs always in
-  the work window.
+- **`window.open`, nunca `tab-new` ou `goto`** — `tab-new` abre na janela do dashboard
+  e cobre a conversa. Sempre: `tab-select` para uma aba na janela de destino →
+  `run-code` com `window.open('URL', '_blank')`.
+- **Nunca `close`** — usar `detach` ao terminar
+- **Snapshot novo antes de interagir** — os refs morrem após a navegação
+- **Duas janelas**: dashboard (conversa) e trabalho (Teams, etc.). Abas novas sempre na
+  janela de trabalho.
 
-### Reading content
+### Lendo conteúdo
 
-Priority (for any site):
+Prioridade (para qualquer site):
 
-1. `evaluate` + `innerText`/`innerHTML` → read text and data
-2. `snapshot` → element refs and confirm state
-3. `screenshot` → last resort, only for visual verification (layout, images)
+1. `evaluate` + `innerText`/`innerHTML` → ler texto e dados
+2. `snapshot` → refs de elementos e confirmar estado
+3. `screenshot` → último recurso, só para verificação visual (layout, imagens)
 
 ```javascript
-// Read page content
+// Ler o conteúdo da página
 page.evaluate(() => document.querySelector('[data-tid="app-layout-area--main"]').innerText)
 ```
 
-### Parallel sessions (chat × cron × sub-agent)
+### Sessões paralelas (chat × cron × sub-agent)
 
-- The `playwright-cli` connection is **per-process**: crons and sub-agents don't inherit
-  the chat's connection. New session connects via `tools/attach.sh`.
-- All use the **same Chrome**: two sessions touching the same tab interfere. Rule: each
-  process works in its own tab; local DB reads (IndexedDB) don't touch the screen and can
-  run in parallel.
-- Name sessions when multiple processes browse: `-s=<task-name>` on all commands for that
-  process (or `PLAYWRIGHT_CLI_SESSION=<name>`).
-- **Never** `close`, `close-all`, `kill-all`, or `delete-data` on the user's browser —
-  closes windows and deletes logins. To exit, `detach`.
+- A conexão do `playwright-cli` é **por processo**: crons e sub-agents não herdam
+  a conexão do chat. Uma sessão nova conecta via `tools/attach.sh`.
+- Todos usam o **mesmo Chrome**: duas sessões mexendo na mesma aba interferem. Regra: cada
+  processo trabalha na própria aba; leituras de DB local (IndexedDB) não tocam a tela e podem
+  rodar em paralelo.
+- Nomear as sessões quando vários processos navegam: `-s=<nome-da-tarefa>` em todos os comandos daquele
+  processo (ou `PLAYWRIGHT_CLI_SESSION=<nome>`).
+- **Nunca** `close`, `close-all`, `kill-all` ou `delete-data` no navegador do usuário —
+  fecha janelas e apaga logins. Para sair, `detach`.
 
-### Route interception — don't use on user's browser
+### Interceptação de rotas — não usar no navegador do usuário
 
-`playwright-cli route "<pattern>" --status=…/--body=…` simulates responses or blocks
-resources. Useful for testing in isolated sessions. On the user's Chrome **don't use**:
-the rule applies to the entire tab and breaks Teams/ADM they're using. If essential,
-remove immediately with `playwright-cli unroute`.
+`playwright-cli route "<padrao>" --status=…/--body=…` simula respostas ou bloqueia
+recursos. Útil para testes em sessões isoladas. No Chrome do usuário **não usar**:
+a regra vale para a aba inteira e quebra o Teams/ADM que ele está usando. Se for essencial,
+remover imediatamente com `playwright-cli unroute`.
 
-## Troubleshooting
+## Erros Comuns e Solução de Problemas
 
-Order (lightest to heaviest):
+Ordem (do mais leve ao mais pesado):
 
-1. **Page JavaScript errors**: `playwright-cli console error`
-2. **Failed requests**: set up a listener that prints only status + path (no headers/body
-   which carry credentials):
+1. **Erros de JavaScript da página**: `playwright-cli console error`
+2. **Requisições falhas**: montar um listener que imprime só status + path (sem headers/body,
+   que carregam credenciais):
    ```bash
    playwright-cli run-code "async page => { page.on('requestfailed', r => console.log('FAILED', r.method(), r.url().split('?')[0], r.failure()?.errorText)); page.on('response', r => { if (r.status() >= 400) console.log('HTTP', r.status(), r.url().split('?')[0]); }); }"
    ```
-   Avoid `requests` / `request <n>` / `response-headers`: they show headers and body with
-   tokens (require approval).
-3. **Element doesn't respond to click**: check via `page.evaluate` if visible, disabled,
-   or covered by another element (`document.elementFromPoint` at center of
+   Evitar `requests` / `request <n>` / `response-headers`: eles mostram headers e body com
+   tokens (exigem aprovação).
+3. **Elemento não responde ao clique**: checar via `page.evaluate` se está visível, desabilitado
+   ou coberto por outro elemento (`document.elementFromPoint` no centro do
    `getBoundingClientRect`).
-4. **Wait for page to settle**: `page.waitForLoadState('networkidle')` or
-   `locator.waitFor({ state: 'visible' })` inside `run-code`.
-5. **Trace (last resort)**: `playwright-cli tracing-start` → reproduce → `tracing-stop`.
-   Records DOM, network, and console for each step. ⚠️ On a logged-in browser the trace
-   contains **tokens and cookies**: save only to `$KIROCREW_SCRATCH`, delete after
-   analysis, never send to `trace.playwright.dev` or attach to tickets.
+4. **Esperar a página assentar**: `page.waitForLoadState('networkidle')` ou
+   `locator.waitFor({ state: 'visible' })` dentro do `run-code`.
+5. **Trace (último recurso)**: `playwright-cli tracing-start` → reproduzir → `tracing-stop`.
+   Grava DOM, rede e console de cada passo. ⚠️ Num navegador logado o trace
+   contém **tokens e cookies**: salvar só em `$KIROCREW_SCRATCH`, apagar depois da
+   análise, nunca enviar para `trace.playwright.dev` nem anexar em tickets.
 
-To catch **a specific API response** (e.g., Teams messages), instead of a listener:
+Para capturar **uma resposta de API específica** (ex.: mensagens do Teams), em vez de um listener:
 ```javascript
 const r = await page.waitForResponse(u => u.url().includes('/messages'));
 return await r.json();
 ```
 
-## Video recording
+## Gravação de vídeo
 
-Record browser interactions for demos, testing, or debugging.
+Grava as interações no navegador para demos, testes ou depuração.
 
 ```bash
-# Start HD recording with animated cursor
-playwright-cli -s=<session> video-start --size 1920x1080 --cursor
+# Iniciar gravação HD com cursor animado
+playwright-cli -s=<sessao> video-start --size 1920x1080 --cursor
 
-# Mark chapters
-playwright-cli -s=<session> video-chapter "Opening menu X"
+# Marcar capítulos
+playwright-cli -s=<sessao> video-chapter "Abrindo o menu X"
 
-# Visually highlight each action (optional)
-playwright-cli -s=<session> video-show-actions
+# Destacar visualmente cada ação (opcional)
+playwright-cli -s=<sessao> video-show-actions
 
-# Stop and save
-playwright-cli -s=<session> video-stop
-# Generates .webm in ~/.kiro/crew/playwright-snapshots/
+# Parar e salvar
+playwright-cli -s=<sessao> video-stop
+# Gera .webm em ~/.kiro/crew/playwright-snapshots/
 ```
 
-| Flag | Effect | Default |
+| Flag | Efeito | Default |
 |---|---|---|
-| `--size 1920x1080` | Resolution | 800x800 (illegible text) |
-| `--fps 30` | Frames per second | 25 |
-| `--cursor` | Animated cursor + element highlight | No cursor |
+| `--size 1920x1080` | Resolução | 800x800 (texto ilegível) |
+| `--fps 30` | Quadros por segundo | 25 |
+| `--cursor` | Cursor animado + destaque do elemento | Sem cursor |
 
-- **Always** record at 1920x1080 — default makes text illegible.
-- May generate multiple `.webm` segments; the main one is the largest.
-- Deliver to user with `file_send` (download in dashboard).
-- Convert to mp4/gif if needed: `ffmpeg -i video.webm -c:v libx264 video.mp4`
+- **Sempre** gravar em 1920x1080 — o default deixa o texto ilegível.
+- Pode gerar vários segmentos `.webm`; o principal é o maior.
+- Entregar ao usuário com `file_send` (download no dashboard).
+- Converter para mp4/gif se precisar: `ffmpeg -i video.webm -c:v libx264 video.mp4`
 
-## App-specific patterns
+## Padrões específicos por app
 
 ### Microsoft Teams
 
 ```javascript
-// Read chat content (what's loaded in DOM)
+// Ler o conteúdo do chat (o que está carregado no DOM)
 document.querySelector('[data-tid="app-layout-area--main"]').innerText
 
-// Chat list items (stable IDs)
+// Itens da lista de chats (IDs estáveis)
 document.querySelectorAll('span[id^="title-chat-list-item_"]')
 
-// Message editor
+// Editor de mensagem
 textbox: '[data-tid="app-layout-area--main"] [role="textbox"]'
-send button: 'button[aria-label*="Send"]'
+botão enviar: 'button[aria-label*="Send"]'
 
-// Search in chat
-Ctrl+F → type in searchbox → Enter
+// Buscar no chat
+Ctrl+F → digitar no searchbox → Enter
 
-// @mention
-Type '@Name' → wait for Suggestions listbox → click option
+// @menção
+Digitar '@Nome' → esperar o listbox de Suggestions → clicar na opção
 ```
 
-**Gotchas:**
-- `mouse.wheel` doesn't scroll the chat: scroll is in an internal div, not body.
-- Teams virtualizes messages: scrolling unloads old ones from DOM. `innerText` gets only
-  the loaded buffer. For long history, use search (Find/global).
-- Expanding folders may be needed to see all chat items.
+**Pegadinhas:**
+- `mouse.wheel` não rola o chat: o scroll fica numa div interna, não no body.
+- O Teams virtualiza as mensagens: rolar descarrega as antigas do DOM. O `innerText` pega só
+  o buffer carregado. Para histórico longo, usar a busca (Find/global).
+- Pode ser preciso expandir pastas para ver todos os itens de chat.
 
-### Reading without marking as read
+### Ler sem marcar como lido
 
-Use local IndexedDB cache instead of opening chats:
+Usar o cache local do IndexedDB em vez de abrir os chats:
 
 ```javascript
-// Teams stores messages in IndexedDB: Teams:replychain-manager:…
+// O Teams guarda mensagens no IndexedDB: Teams:replychain-manager:…
 // Store: replychains, key: [conversationId, replyChainId]
-// Each record has messageMap with messages
+// Cada registro tem um messageMap com as mensagens
 ```
 
-This reads cached messages without marking them as read. Coverage depends on what the user
-has previously opened in that browser.
+Isso lê as mensagens em cache sem marcá-las como lidas. A cobertura depende do que o usuário
+já abriu naquele navegador.
 
-## Limitations
+## Limitações
 
-- The agent's shell has no `$DISPLAY`. CDP connection works via loopback.
-- If Chrome restarts, the UUID changes and the agent reconnects.
-- Extension popups (like Jam) are outside CDP — can't automate those.
+- O shell do agente não tem `$DISPLAY`. A conexão CDP funciona via loopback.
+- Se o Chrome reiniciar, o UUID muda e o agente reconecta.
+- Popups de extensão (como o Jam) ficam fora do CDP — não dá para automatizar.
 
-## Tools
+## Ferramentas
 
-| Script | Purpose |
+| Script | Finalidade |
 |---|---|
-| `tools/attach.sh` | Connect to user's Chrome, return session info |
+| `tools/attach.sh` | Conectar ao Chrome do usuário e devolver os dados da sessão |
 
-## See also
+## Veja também
 
-- `web-browse` skill — higher-level browsing patterns
-- `web-preview` skill — preview local dev servers
-- `browser-auth` skill — logged-in session management
+- skill `web-browse` — padrões de navegação de mais alto nível
+- skill `web-preview` — preview de servidores de dev locais
+- skill `browser-auth` — gestão de sessões logadas
