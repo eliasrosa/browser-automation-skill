@@ -14,12 +14,17 @@ Skill do Kiro Crew para automatizar aplicações web pelo Chrome logado do usuá
 ### Como skill do Kiro Crew
 
 ```bash
-# Copiar para o diretório de skills
-cp -r . ~/.kiro/crew/skills/browser-automation/
+# Clonar direto no diretório de skills (nome do repo ≠ nome da skill)
+git clone https://github.com/eliasrosa/browser-automation-skill ~/.kiro/crew/skills/browser-automation
+
+# Ou, a partir de um clone já existente, copiar o conteúdo:
+# cp -r . ~/.kiro/crew/skills/browser-automation/
 
 # Ou instalar pelo registry (quando publicada)
 # kirocrew skill install browser-automation
 ```
+
+A skill é carregada automaticamente pelo Kiro Crew na próxima sessão.
 
 ### Configuração do usuário (uma vez)
 
