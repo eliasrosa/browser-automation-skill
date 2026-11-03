@@ -14,23 +14,57 @@ Skill do Kiro Crew para automatizar aplicações web pelo Chrome logado do usuá
 ### Como skill do Kiro Crew
 
 ```bash
-# Clonar direto no diretório de skills (nome do repo ≠ nome da skill)
-git clone https://github.com/eliasrosa/browser-automation-skill ~/.kiro/crew/skills/browser-automation
-
-# Ou, a partir de um clone já existente, copiar o conteúdo:
-# cp -r . ~/.kiro/crew/skills/browser-automation/
-
-# Ou instalar pelo registry (quando publicada)
-# kirocrew skill install browser-automation
+# Clonar direto no diretório de skills do usuário (nome do repo ≠ nome da skill)
+git clone https://github.com/eliasrosa/browser-automation-skill ~/.kiro/skills/browser-automation
 ```
 
-A skill é carregada automaticamente pelo Kiro Crew na próxima sessão.
+Use um clone, não uma cópia: assim `git pull` atualiza a skill. O Kiro Crew carrega as
+skills de `~/.kiro/skills/` sozinho, na próxima sessão. A skill
+[crew-setup](https://github.com/eliasrosa/kirocrew-setup-skill) também clona e valida
+esta skill quando ela está vinculada.
 
 ### Configuração do usuário (uma vez)
 
-1. Abrir o Chrome normalmente
-2. Ir em `chrome://inspect/#remote-debugging` e habilitar
-3. Instalar a [extensão do Playwright](https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm)
+1. Instalar o `playwright-cli`: no Kiro Crew, **Settings → Browser** (um clique). Fora do
+   Crew: `npm install -g @playwright/cli@latest` (Node.js 20+).
+2. Abrir o Chrome normalmente
+3. Ir em `chrome://inspect/#remote-debugging` e habilitar
+
+A [extensão do Playwright](https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm)
+é opcional: ela serve ao modo extensão do próprio Kiro Crew, não ao attach por CDP desta skill.
+
+## Requisitos
+
+| Item | Tipo | Como instalar / configurar |
+|------|------|----------------------------|
+| `playwright-cli` | Ferramenta | Settings → Browser no Kiro Crew, ou `npm install -g @playwright/cli@latest` |
+| Node.js 20+ | Runtime | usado pelo `playwright-cli` |
+| Google Chrome (ou Chromium/Brave) | Navegador | instalador oficial |
+| Remote debugging | Configuração | `chrome://inspect/#remote-debugging` → habilitar |
+| Python 3.10+ | Runtime | só para o `tools/check.py` |
+
+Verificar tudo de uma vez:
+
+```bash
+python3 ~/.kiro/skills/browser-automation/tools/check.py
+```
+
+Saída esperada quando OK:
+
+```
+Ferramentas:
+  ✓ Python 3.10+
+  ✓ playwright-cli instalado
+  ✓ Node.js 20+ para o playwright-cli (v22.x)
+  ✓ Chrome/Chromium instalado (google-chrome)
+
+Navegador:
+  ✓ remote debugging habilitado (DevToolsActivePort)
+  ✓ porta de debug 9222 aceitando conexão
+```
+
+Perfil fora do padrão (Chromium, Brave ou outro diretório de dados): defina
+`CHROME_USER_DATA_DIR` com a pasta do perfil, onde fica o `DevToolsActivePort`.
 
 ## Uso
 
@@ -76,6 +110,7 @@ browser-automation/
 │   ├── browser-cdp-agente.md     # Setup do Chrome, conexão CDP, regras, diagnóstico
 │   └── browser-gravacao-video.md # Gravação de vídeo da navegação
 └── tools/
+    ├── check.py       # Pré-check: playwright-cli, Node, Chrome, remote debugging (exit 0/1)
     └── attach.sh      # Conecta ao Chrome do usuário
 ```
 
@@ -128,5 +163,5 @@ MIT
 
 ## Relacionados
 
-- [playwright-cli](https://github.com/anthropics/anthropic-tools) — O CLI por baixo
+- [playwright-cli](https://github.com/microsoft/playwright-cli) — O CLI por baixo
 - [Kiro Crew](https://kiro.dev) — Plataforma de agentes autônomos

@@ -10,12 +10,14 @@ O agente faz todo o resto sozinho — conectar, abrir tab, navegar, interagir.
 
 ### O que o usuário faz (uma vez)
 
-1. Abrir o Chrome (jeito normal, sem flags)
-2. Ir em `chrome://inspect/#remote-debugging` e habilitar
-3. Ter a extensão Playwright instalada:
-   https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm
+1. Instalar o `playwright-cli`: no Kiro Crew, Settings → Browser (um clique). Fora do
+   Crew: `npm install -g @playwright/cli@latest` (Node.js 20+).
+2. Abrir o Chrome (jeito normal, sem flags)
+3. Ir em `chrome://inspect/#remote-debugging` e habilitar
 
-Pronto. Nada mais.
+Pronto. `python3 ../tools/check.py` confere tudo. A extensão do Playwright
+(https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm)
+é opcional: serve ao modo extensão do Kiro Crew, não ao attach por CDP.
 
 ### O que o agente faz (internamente)
 

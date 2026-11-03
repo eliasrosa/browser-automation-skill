@@ -2,7 +2,6 @@
 name: browser-automation
 description: Use when automating web apps the user is already logged into (Teams, Outlook, Jira web, internal tools) via the user's own Chrome over CDP — read/send messages, scrape data, fill forms, record video — and MCP tools or APIs are unavailable or insufficient.
 inclusion: auto
-version: 2026-10-17T13:37
 ---
 
 # Browser Automation
@@ -27,6 +26,7 @@ MCP/API dedicada e suficiente para a tarefa.
 
 | Operação | Comando |
 |---|---|
+| Pré-check | `python3 tools/check.py` (playwright-cli, Node, Chrome, remote debugging) |
 | Conectar ao Chrome | `tools/attach.sh` (ou `tools/attach.sh -s <sessao>`) |
 | Listar abas | `playwright-cli -s=<sessao> tab-list` |
 | Abrir aba nova | `run-code` com `window.open('URL', '_blank')` — nunca `tab-new`/`goto` |
@@ -40,13 +40,20 @@ MCP/API dedicada e suficiente para a tarefa.
 
 ## Pré-requisitos (configuração do usuário, uma vez)
 
-1. Abrir o Chrome normalmente (sem flags especiais)
-2. Ir em `chrome://inspect/#remote-debugging` e habilitar
-3. Instalar a extensão do Playwright:
-   https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm
+1. **`playwright-cli`**: no Kiro Crew, Settings → Browser instala com um clique (fica em
+   `~/.kiro/crew/playwright-cli/`). Fora do Crew: `npm install -g @playwright/cli@latest`
+   (Node.js 20+).
+2. Abrir o Chrome normalmente (sem flags especiais)
+3. Ir em `chrome://inspect/#remote-debugging` e habilitar
 
-É só isso. O agente cuida de todo o resto. Procedimento completo de conexão, regras de
+Conferir com `python3 tools/check.py`. A
+[extensão do Playwright](https://chromewebstore.google.com/detail/playwright-extension/mmlmfjhmonkocbjadbfplnigmagldckm)
+é opcional: ela serve ao modo extensão do próprio Kiro Crew (`attach --extension`, com
+token em Settings → Browser), não ao attach por CDP desta skill.
+
+O agente cuida de todo o resto. Procedimento completo de conexão, regras de
 navegação e diagnóstico em [`runbooks/browser-cdp-agente.md`](runbooks/browser-cdp-agente.md).
+Perfil fora do padrão (Chromium, Brave, outro diretório): `CHROME_USER_DATA_DIR=<pasta do perfil> tools/attach.sh`.
 
 ## Como funciona
 
@@ -115,7 +122,14 @@ remover imediatamente com `playwright-cli unroute`.
 
 ## Erros Comuns e Solução de Problemas
 
-Ordem (do mais leve ao mais pesado):
+| Sintoma | Causa | Correção |
+|---|---|---|
+| `playwright-cli: command not found` | CLI não instalado ou fora do PATH | Settings → Browser no Kiro Crew; o `attach.sh` também acha o CLI em `~/.kiro/crew/playwright-cli/bin/` |
+| "Chrome não está rodando com remote debugging" | remote debugging desligado ou perfil fora do padrão | `chrome://inspect/#remote-debugging`; outro perfil: `CHROME_USER_DATA_DIR=<pasta>` |
+| `attach` conecta mas as abas sumiram | o Chrome reiniciou e o UUID do `DevToolsActivePort` mudou | rodar `tools/attach.sh` de novo |
+| Comando pede aprovação no attach | regra do Kiro Crew para o navegador do usuário | aprovar; não reescrever o comando para fugir do prompt |
+
+Quando a automação falha numa página, a ordem é do mais leve ao mais pesado:
 
 1. **Erros de JavaScript da página**: `playwright-cli console error`
 2. **Requisições falhas**: montar um listener que imprime só status + path (sem headers/body,
@@ -192,7 +206,8 @@ ambiente específico ficam nos seus próprios steerings/notas, nunca nesta skill
 
 | Arquivo | Finalidade |
 |---|---|
-| `tools/attach.sh` | Conectar ao Chrome do usuário e devolver os dados da sessão |
+| `tools/check.py` | Pré-check: playwright-cli, Node.js, Chrome, remote debugging e porta (exit 0/1) |
+| `tools/attach.sh` | Conectar ao Chrome do usuário e devolver os dados da sessão (`--print-url` só mostra a URL CDP) |
 | `runbooks/browser-cdp-agente.md` | Setup do Chrome, conexão CDP, regras de navegação e diagnóstico |
 | `runbooks/browser-gravacao-video.md` | Gravar a navegação do agente em vídeo |
 | `apps/teams.md` | Guia do Microsoft Teams |
